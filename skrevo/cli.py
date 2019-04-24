@@ -1,5 +1,19 @@
 #!/usr/bin/env python
 # coding=utf-8
+"""skrevo
+Usage:
+  skrevo [--config FILE] [-o SKREVOFILE]
+  skrevo (-h | --help)
+  skrevo --version
+  skrevo --show-default-bindings
+Options:
+  -o FILE                             Path to the file where skrevo will save your content [default: ~/skrevo.txt]
+  -c FILE --config=FILE               Path to your skrevo configuraton file [default: ~/.skrevorc]
+  -h --help                           Show this screen.
+  --version                           Show version.
+  --show-default-bindings             Show default keybindings in config parser format
+                                      Add this to your config file and edit to customize
+"""
 
 import sys
 import os
@@ -8,8 +22,10 @@ import threading
 from collections import OrderedDict
 from docopt import docopt
 
-import skrevo
+import skrevo as SKR
 from skrevo.urwid_ui import UrwidUI
+from skrevo.keys import KeyBindings
+from skrevo.skrevo import Skrevo
 
 import configparser
 config_parser_module = configparser
@@ -77,8 +93,9 @@ def main():
     random.seed()
 
     # Parse command line
-    arguments = docopt(__doc__, version=skrevo.version)
-    # pp(arguments) ; exit(0)
+    arguments = docopt(__doc__, version=SKR.version)
+    config_file_path = os.path.expanduser(arguments['--config'][0])
+    # print(arguments) ; exit(0)
 
     # Validate readline editing mode option (docopt doesn't handle this)
     # if arguments['--readline-editing-mode'] not in ['vi', 'emacs']:
@@ -86,21 +103,21 @@ def main():
 
     # Parse config file
     cfg = config_parser_module.ConfigParser(allow_no_value=True)
-    # cfg.add_section('keys')
+    cfg.read(config_file_path)
 
-    # if arguments['--show-default-bindings']:
-    #     d = {k: ", ".join(v) for k, v in KeyBindings({}).key_bindings.items()}
-    #     cfg._sections['keys'] = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
-    #     cfg.write(sys.stdout)
-    #     exit(0)
+    cfg.add_section('keys')
+    cfg.add_section('settings')
 
-    # cfg.add_section('settings')
-    # cfg.read(os.path.expanduser(arguments['--config']))
+    if arguments['--show-default-bindings']:
+        d = {k: ", ".join(v) for k, v in KeyBindings({}).key_bindings.items()}
+        cfg._sections['keys'] = OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+        cfg.write(sys.stdout)
+        exit(0)
 
-    # # Load keybindings specified in the [keys] section of the config file
-    # keyBindings = KeyBindings(dict(cfg.items('keys')))
+    # Load keybindings specified in the [keys] section of the config file
+    keyBindings = KeyBindings(dict(cfg.items('keys')))
 
-    # # load the colorscheme defined in the user config, else load the default scheme
+    # load the colorscheme defined in the user config, else load the default scheme
     # colorscheme = ColorScheme(dict(cfg.items('settings')).get('colorscheme', 'default'), cfg)
 
     # Get auto-saving setting (defaults to False)
@@ -109,20 +126,21 @@ def main():
 
     # Load the skrevo.txt file specified in the [settings] section of the config file
     # a skrevo.txt file on the command line takes precedence
-    skrevo_file = dict(cfg.items('settings')).get('file', arguments['SKREVOFILE'])
-    if arguments['SKREVOFILE']:
-        skrevo_file = arguments['SKREVOFILE']
+    skrevo_file = dict(cfg.items('settings')).get('content-file', arguments['-o'])
+    if arguments['-o']:
+        skrevo_file = os.path.expanduser(arguments['-o'])
 
     if skrevo_file is None:
-        exit_with_error("ERROR: No skrevo file specified. Either specify one as an argument on the command line or set it in your configuration file ({0}).".format(arguments['--config']))
+        exit_with_error("ERROR: No skrevo file specified. Either specify one as an argument on the command line or set it in your configuration file ({0}).".format(config_file_path))
 
     skrevo_file_path = get_real_path(skrevo_file, 'skrevo.txt')
 
     try:
-        with open(skrevo_file_path, "r") as skrevo_file:
+        with open(skrevo_file_path, "w+") as skrevo_file:
             skrevo = Skrevo(skrevo_file.readlines(), skrevo_file_path)
-    except:
-        exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({0}).".format(skrevo_file_path, arguments['--config']))
+    except FileNotFoundError as fnf_error:
+        print(fnf_error)
+        exit_with_error("ERROR: unable to open {0}\n\nEither specify one as an argument on the command line or set it in your configuration file ({1}).".format(skrevo_file_path, config_file_path))
         skrevo = Skrevo([], skrevo_file_path)
 
     show_toolbar = get_boolean_config_option(cfg, 'settings', 'show-toolbar')
