@@ -15,4 +15,4 @@ __version__ = (0, 1, 0)
 
 version = "%s.%s.%s" % __version__
 
-__all__ = ["cli", "urwid_ui"]
+__all__ = ["cli", "skrevo", "urwid_ui", "keys"]
