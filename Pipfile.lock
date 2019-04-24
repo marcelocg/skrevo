@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e115814c926e3cc0717950502da03d60af11714c4512db29013abb5e4d621223"
+            "sha256": "46c5b07683fa7fb459696d8706df33e13037f6a0d29f313f6c1e7a8dd5ecb865"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.6"
+            "python_version": "3.7"
         },
         "sources": [
             {
@@ -18,7 +18,6 @@
     "default": {
         "docopt": {
             "hashes": [
-                "sha256:414f7fe7774772518b0ba5c0a46e0d22f3ca1d9ad583b4130ea7c9cf09f9fdb0",
                 "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"
             ],
             "index": "pypi",
